@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  myapp:
+    image: myapp:latest
+    container_name: myapp_container
+    ports:
+      - "80:80"
+    restart: always
+
+
