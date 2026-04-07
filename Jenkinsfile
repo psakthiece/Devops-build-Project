@@ -3,18 +3,18 @@ pipeline {
 
     environment {
         DOCKERHUB_USER = 'psakthiece'
-        DOCKERHUB_PASS = credentials('dockerhub-creds')
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'dev', url: 'https://github.com/psakthiece/Devops-build-Project.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
+                sh 'chmod +x build.sh'
                 sh './build.sh'
             }
         }
@@ -22,14 +22,10 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    sh "echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin"
-                    if (env.BRANCH_NAME == 'dev') {
-                        sh "docker tag react-app:dev $DOCKERHUB_USER/dev:latest"
-                        sh "docker push $DOCKERHUB_USER/dev:latest"
-                    }
-                    if (env.BRANCH_NAME == 'master') {
-                        sh "docker tag react-app:dev $DOCKERHUB_USER/prod:latest"
-                        sh "docker push $DOCKERHUB_USER/prod:latest"
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                        sh "docker tag myapp:latest $DOCKER_USER/dev:latest"
+                        sh "docker push $DOCKER_USER/dev:latest"
                     }
                 }
             }
@@ -38,7 +34,13 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent(['ec2-ssh-key']) {
-                    sh 'ssh ubuntu@3.238.28.128 "cd ~/devops-build && ./deploy.sh"'
+                    sh '''
+                    # Copy both deploy.sh and docker-compose.yml to EC2
+                    scp -o StrictHostKeyChecking=no deploy.sh docker-compose.yml ubuntu@3.238.28.128:/home/ubuntu/
+
+                    # Run deploy.sh on EC2
+                    ssh -o StrictHostKeyChecking=no ubuntu@3.238.28.128 "chmod +x ~/deploy.sh && ~/deploy.sh"
+                    '''
                 }
             }
         }
@@ -46,9 +48,7 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-                    retry(3) {
-                        sh 'curl -f http://3.238.28.128 || exit 1'
-                    }
+                    sh 'curl -f http://3.238.28.128 || exit 1'
                 }
             }
         }
@@ -63,4 +63,3 @@ pipeline {
         }
     }
 }
-
