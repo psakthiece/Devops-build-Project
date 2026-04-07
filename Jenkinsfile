@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = 'your-dockerhub-username'
+        DOCKERHUB_USER = 'psakthiece'
         DOCKERHUB_PASS = credentials('dockerhub-creds')
     }
 
@@ -38,7 +38,7 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent(['ec2-ssh-key']) {
-                    sh 'ssh ubuntu@<EC2_PUBLIC_IP> "cd ~/devops-build && ./deploy.sh"'
+                    sh 'ssh ubuntu@3.238.28.128 "cd ~/devops-build && ./deploy.sh"'
                 }
             }
         }
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 script {
                     retry(3) {
-                        sh 'curl -f http://<EC2_PUBLIC_IP> || exit 1'
+                        sh 'curl -f http://3.238.28.128 || exit 1'
                     }
                 }
             }
