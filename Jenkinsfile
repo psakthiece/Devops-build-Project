@@ -36,10 +36,10 @@ pipeline {
                 sshagent(['ec2-ssh-key']) {
                     sh '''
                     # Copy both deploy.sh and docker-compose.yml to EC2
-                    scp -o StrictHostKeyChecking=no deploy.sh docker-compose.yml ubuntu@3.238.28.128:/home/ubuntu/
+                    scp -o StrictHostKeyChecking=no deploy.sh docker-compose.yml ubuntu@18.207.130.95:/home/ubuntu/
 
                     # Run deploy.sh on EC2
-                    ssh -o StrictHostKeyChecking=no ubuntu@3.238.28.128 "chmod +x ~/deploy.sh && ~/deploy.sh"
+                    ssh -o StrictHostKeyChecking=no ubuntu@18.207.130.95 "chmod +x ~/deploy.sh && ~/deploy.sh"
                     '''
                 }
             }
@@ -48,7 +48,7 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-                    sh 'curl -f http://3.238.28.128 || exit 1'
+                    sh 'curl -f http://18.207.130.95 || exit 1'
                 }
             }
         }
